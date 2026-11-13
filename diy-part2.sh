@@ -52,3 +52,17 @@ for path, node in menus.items():
 PY
 rm -f feeds/luci/modules/luci-mod-system/htdocs/luci-static/resources/view/system/plugins.js
 rm -f feeds/luci/modules/luci-mod-network/htdocs/luci-static/resources/view/network/diagnostics.js
+# 1. 禁用不需要且会导致编译报错的 NaiveProxy、libcronet 及 gn
+sed -i '/CONFIG_PACKAGE_naiveproxy/d' .config
+sed -i '/CONFIG_PACKAGE_luci-app-passwall_INCLUDE_NaiveProxy/d' .config
+sed -i '/CONFIG_PACKAGE_libcronet/d' .config
+sed -i '/CONFIG_PACKAGE_gn/d' .config
+echo "# CONFIG_PACKAGE_naiveproxy is not set" >> .config
+echo "# CONFIG_PACKAGE_luci-app-passwall_INCLUDE_NaiveProxy is not set" >> .config
+echo "# CONFIG_PACKAGE_libcronet is not set" >> .config
+echo "# CONFIG_PACKAGE_gn is not set" >> .config
+
+# 2. 防御性兼容补丁：若有其他间接依赖拉取 gn，强制将 -std=c++23 替换为 clang-14 支持的 -std=c++2b
+if [ -f "feeds/packages/devel/gn/Makefile" ]; then
+    sed -i '/build\/gen\.py/i \\tsed -i "s/-std=c++23/-std=c++2b/g" build/gen.py' feeds/packages/devel/gn/Makefile
+fi
